@@ -69,6 +69,34 @@ def choose():
     flask.g.calendars = list_calendars(gcal_service)
     return render_template('index.html')
 
+
+
+
+@app.route('/get_busy_times')
+def get_busy_times():
+    app.logger.debug("Entering get busy times")
+    app.logger.debug("Checking credentials for Google calendar access")
+    credentials = valid_credentials()
+    if not credentials:
+        app.logger.debug("Redirecting to authorization")
+        return flask.redirect(flask.url_for('oauth2callback'))
+    
+    gcal_service = get_gcal_service(credentials)
+    calendars = json.loads(request.args.get('calendarIDs'))
+    app.logger.debug(calendars)
+    for calendar in calendars:
+        calendarID = str(calendar)
+        page_token = None
+        while True:
+            events = gcal_service.events().list(calendarId=calendarID, pageToken=page_token).execute()
+            for event in events['items']:
+                app.logger.debug(event['summary'])
+            page_token = events.get('nextPageToken')
+            if not page_token:
+                break
+    return flask.jsonify(result=True)
+
+
 ####
 #
 #  Google calendar authorization:
@@ -195,6 +223,8 @@ def setrange():
     flask.flash("Setrange gave us '{}'".format(
       request.form.get('daterange')))
     daterange = request.form.get('daterange')
+    begin_time = request.form.get('begin_time')
+    end_time = request.form.get('end_time')
     flask.session['daterange'] = daterange
     daterange_parts = daterange.split()
     flask.session['begin_date'] = interpret_date(daterange_parts[0])

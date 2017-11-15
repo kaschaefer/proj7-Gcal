@@ -8,6 +8,7 @@ static/js/*.min.js
 *~
 .DS_Store
 meetings/credentials.ini
+client_secret_522433165187-p7nq7mgkgn98lsjj40ohgabdeojf70tc.apps.googleusercontent.com.json
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
