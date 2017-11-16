@@ -83,6 +83,7 @@ def get_busy_times():
     
     gcal_service = get_gcal_service(credentials)
     calendars = json.loads(request.args.get('calendarIDs'))
+
     #Get beginning and end dates of date range
     begin = arrow.get(flask.session['begin_date'])
     begin_time = flask.session['begin_time']
@@ -101,7 +102,7 @@ def get_busy_times():
     for calendar in calendars:
         calendarID = str(calendar)
         page_token = None
-        # For each day in the given date range on the given calendar
+        # For each day in the given date range on the given calendar (sorted)
         for day in arrow.Arrow.span_range('day', begin, end):
             day_start = arrow.get(day[0])
             day_end = arrow.get(day[1])
