@@ -62,22 +62,6 @@
      class="pull-down"
      style="background: #fff; cursor: pointer; padding: 5px 10px;
      border: 1px solid #ccc; width: 12em" >
-  <script type="text/javascript">
-  $(function() {
-  $('input[name="daterange"]').daterangepicker(
-    {   ranges: {
-           'Today': [moment(), moment()],
-           'Tomorrow':[moment().add(1, 'days'),
-                       moment().add(1, 'days')], 
-           'This week':[moment(), moment().endOf('week')],
-           'Next week':[moment().add(7, 'days').startOf('week'),
-                        moment().add(7, 'days').endOf('week')],
-           'This month':[moment(), moment().endOf('month')],
-           'Within two weeks':[moment(),moment().add(15, 'days')]
-        }}
-       );
-    });
-  </script>
 
   <br /><input type="submit" value="Apply date range" /><br><br>
   <p> From:
@@ -85,6 +69,24 @@
       To: <input type=time name="end_time" id="end_time" value="16:00"    />
       <br>
       <input type="submit" id="time submit" value="Choose time range" /></p>
+
+  <script type="text/javascript">
+
+        $(function() {
+        $('input[name="daterange"]').daterangepicker(
+          {   ranges: {
+                 'Today': [moment(), moment()],
+                 'Tomorrow':[moment().add(1, 'days'),
+                             moment().add(1, 'days')], 
+                 'This week':[moment(), moment().endOf('week')],
+                 'Next week':[moment().add(7, 'days').startOf('week'),
+                              moment().add(7, 'days').endOf('week')],
+                 'This month':[moment(), moment().endOf('month')],
+                 'Within two weeks':[moment(),moment().add(15, 'days')]
+              }}
+             );
+          });
+    </script>
   </form>
   
 
@@ -127,6 +129,7 @@
 <script type="text/javascript">
 
 $("#show_busy").click( function(){
+            $("#calendar_events").empty();
              var checkedBoxed = getCheckedBoxed("calendar_checkbox");
              console.log("The checked boxes are " + checkedBoxed);
              get_Busy_Times(checkedBoxed);
@@ -140,13 +143,14 @@ function get_Busy_Times(calendar_IDs){
               $.getJSON( "/get_busy_times", { calendarIDs: jsonString }, 
               function(data) {
                 //TODO:: finish this
-                result = data.result;
+                var events = data.result;
+                console.log(events);
+                $("#calendar_events").append("<h5> Avoiding conflicts with: </h5>");
                 console.log("I'm back from a request for get busy times");
-                   //TODO:: for each entry in result, print result
-                //}
-                //TODO: Add results to bottom of webpage
-                //document.getElementById("calendar_events")
-
+                for (i = 0; i < events.length; i++) {
+                  var eventString = events[i];
+                  $("#calendar_events").append("<br>" + eventString);
+                }
               });
 
 }
@@ -168,23 +172,6 @@ function get_Busy_Times(calendar_IDs){
   }
   //End Borrowed Function
 </script>
-
-
-{% if g.busy_times is defined %}
-<div class = "row">
-  {% for time_block in g.busy_times %}
-    <div class="col-md-4">
-    {{ event.summary }}
-    </div>
-    {%if loop.index is divisibleby 1 %}
-    </div><div class="row">
-    {% endif %}
-  {% endfor %}
-    </div>
-{% endif %}
-
-
-    
 
   </div>  <!-- container (for bootstrap) -->
   </body> </html>

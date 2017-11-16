@@ -83,18 +83,81 @@ def get_busy_times():
     
     gcal_service = get_gcal_service(credentials)
     calendars = json.loads(request.args.get('calendarIDs'))
-    app.logger.debug(calendars)
+    #Get beginning and end dates of date range
+    begin = arrow.get(flask.session['begin_date'])
+    begin_time = flask.session['begin_time']
+    b_hrs, b_mins = begin_time.split(':')
+
+    end = arrow.get(flask.session['end_date'])
+    end_time = flask.session['end_time']
+    e_hrs, e_mins = end_time.split(':')
+
+    app.logger.debug(begin)
+    app.logger.debug(end)
+
+    showEvents = []
+
+    # Get all events from the given calendars
     for calendar in calendars:
         calendarID = str(calendar)
         page_token = None
-        while True:
-            events = gcal_service.events().list(calendarId=calendarID, pageToken=page_token).execute()
-            for event in events['items']:
-                app.logger.debug(event['summary'])
-            page_token = events.get('nextPageToken')
-            if not page_token:
-                break
-    return flask.jsonify(result=True)
+        # For each day in the given date range on the given calendar
+        for day in arrow.Arrow.span_range('day', begin, end):
+            day_start = arrow.get(day[0])
+            day_end = arrow.get(day[1])
+            app.logger.debug(day_start)
+            app.logger.debug(day_end)
+
+            #While there are still more events to get
+            while True:
+                current_begin = day[0].shift(hours=+int(b_hrs), minutes=+int(b_mins))
+                current_end = day[1].replace(hour=int(e_hrs), minute=int(e_mins))
+                app.logger.debug(current_begin)
+                app.logger.debug(current_end)
+                events = gcal_service.events().list(calendarId=calendarID, pageToken=page_token, timeMax=current_end, timeMin=current_begin).execute()
+                
+                #For each event in the list of events
+                for event in events['items']:
+                    app.logger.debug(event['summary'])
+                    eventStart = event['start']
+                    eventFinish = event['end']
+                    app.logger.debug(eventStart)
+                    app.logger.debug(eventFinish)
+                    showEvents.append(event)
+                page_token = events.get('nextPageToken')
+                if not page_token:
+                   break
+    # end of get all events
+
+        #Now create a list of strings with the relevant information
+        finished_events = [ ]
+        for event in showEvents:
+            string = " "
+            #If the event has a start time, it is not an all day event
+            # has key function?????????????????
+            if 'dateTime' in event['start']:
+                start_time = arrow.get(event['start']['dateTime'])
+                start_date = format_arrow_date(start_time)
+                string = str(start_date)
+                start_time = format_arrow_time(start_time)
+                string = string + " " + str(start_time)
+                end_time = arrow.get(event['end']['dateTime'])
+                end_time = format_arrow_time(end_time)
+                string = string + " - " + str(end_time) + ": "
+                string = string + event['summary']
+            #Event is all day, so don't try to parse times
+            else:
+                start_date = arrow.get(event['start']['date'])
+                start_date = format_arrow_date(start_date)
+                string = str(start_date)
+                string = string + " :" + event['summary']
+
+            app.logger.debug(string)
+            finished_events.append(string)
+        #end of create list of strings
+
+    result = finished_events
+    return flask.jsonify(result = result)
 
 
 ####
@@ -223,8 +286,8 @@ def setrange():
     flask.flash("Setrange gave us '{}'".format(
       request.form.get('daterange')))
     daterange = request.form.get('daterange')
-    begin_time = request.form.get('begin_time')
-    end_time = request.form.get('end_time')
+    flask.session['begin_time'] = request.form.get('begin_time')
+    flask.session['end_time'] = end_time = request.form.get('end_time')
     flask.session['daterange'] = daterange
     daterange_parts = daterange.split()
     flask.session['begin_date'] = interpret_date(daterange_parts[0])
@@ -255,8 +318,10 @@ def init_session_values():
         tomorrow.format("MM/DD/YYYY"),
         nextweek.format("MM/DD/YYYY"))
     # Default time span each day, 8 to 5
-    flask.session["begin_time"] = interpret_time("9am")
+    flask.session["begin_time"] = interpret_time("8am")
     flask.session["end_time"] = interpret_time("5pm")
+    app.logger.debug("Initializing values")
+    app.logger.debug(flask.session["begin_time"])
 
 def interpret_time( text ):
     """
