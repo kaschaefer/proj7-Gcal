@@ -48,7 +48,7 @@ APPLICATION_NAME = 'MeetMe class project'
 @app.route("/index")
 def index():
   app.logger.debug("Entering index")
-  if 'begin_date' not in flask.session:
+  if 'begin_time' not in flask.session or 'begin_time' == "":
     init_session_values()
   return render_template('index.html')
 
@@ -63,6 +63,9 @@ def choose():
     if not credentials:
       app.logger.debug("Redirecting to authorization")
       return flask.redirect(flask.url_for('oauth2callback'))
+
+    if 'begin_time' not in flask.session or 'begin_time' == "":
+        init_session_values()
 
     gcal_service = get_gcal_service(credentials)
     app.logger.debug("Returned from get_gcal_service")
@@ -291,7 +294,7 @@ def setrange():
       request.form.get('daterange')))
     daterange = request.form.get('daterange')
     flask.session['begin_time'] = request.form.get('begin_time')
-    flask.session['end_time'] = end_time = request.form.get('end_time')
+    flask.session['end_time'] = request.form.get('end_time')
     flask.session['daterange'] = daterange
     daterange_parts = daterange.split()
     flask.session['begin_date'] = interpret_date(daterange_parts[0])
@@ -322,10 +325,9 @@ def init_session_values():
         tomorrow.format("MM/DD/YYYY"),
         nextweek.format("MM/DD/YYYY"))
     # Default time span each day, 8 to 5
-    flask.session["begin_time"] = interpret_time("8am")
-    flask.session["end_time"] = interpret_time("5pm")
+    flask.session["begin_time"] = interpret_time("8:00")
+    flask.session["end_time"] = interpret_time("17:00")
     app.logger.debug("Initializing values")
-    app.logger.debug(flask.session["begin_time"])
 
 def interpret_time( text ):
     """

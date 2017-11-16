@@ -64,8 +64,18 @@
      border: 1px solid #ccc; width: 12em" >
 
   <br /><input type="submit" value="Apply date range" /><br><br>
-  <p> From: <input type=time name="begin_time" id="begin_time" value="10:00"    />
-      To: <input type=time name="end_time" id="end_time" value="16:00"    />
+  <p> From: <input type=time name="begin_time" id="begin_time" 
+    {% if session.daterange is defined %}
+      value="{{session.begin_time}}"
+    {% else %}
+      value =""
+    {% endif %}    />
+      To: <input type=time name="end_time" id="end_time" 
+      {% if session.daterange is defined %}
+        value="{{session.end_time}}"
+      {% else %}
+        value =""
+      {% endif %}     />
       <br>
   <input type="submit" id="time submit" value="Choose time range" /></p>
 
