@@ -124,6 +124,9 @@ def get_busy_times():
                     eventFinish = event['end']
                     app.logger.debug(eventStart)
                     app.logger.debug(eventFinish)
+                    #Check for transparent events
+                    if 'transparency' in event and event['transparency'] == "transparent":
+                        continue
                     showEvents.append(event)
                 page_token = events.get('nextPageToken')
                 if not page_token:
